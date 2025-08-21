@@ -5,22 +5,26 @@ from rpg.dados import Dado
 from rpg.modelos import ConjuntoAtributos, ATRIBUTOS
 from rpg.regras import LivroRegras
 
+
 class estrategia(ABC):
     @abstractmethod
     def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
         ...
 
+
 class EstrategiaClassica(estrategia):
 
     def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
-        valores = []
-        for _ in range(6):
-            valores.append(Dado.rolar_soma(regras.lados_classico, regras.vezes_classico))
-            mapeamento = {atr: valores[i] for i, atr in enumerate(ATRIBUTOS)}
-            return ConjuntoAtributos(**mapeamento)
-        
+        valores: List[int] = [
+            Dado.rolar_soma(regras.lados_classico, regras.vezes_classico)
+            for _ in range(6)
+        ]
+        mapeamento = {atr: valores[i] for i, atr in enumerate(ATRIBUTOS)}
+        return ConjuntoAtributos(**mapeamento)
+
+
 class _DistribuidorInterativo:
-    def __init__(self, entrada = input, saida=input):
+    def __init__(self, entrada=input, saida=print):
         self.entrada = entrada
         self.saida = saida
 
@@ -31,7 +35,7 @@ class _DistribuidorInterativo:
 
         for atributo in ATRIBUTOS:
             while True:
-                self.saida(f"Atributo: {atributo}. Disponiveis: {pool}")
+                self.saida(f"Atributo: {atributo}. Disponíveis: {pool}")
                 escolha = self.entrada(f"Escolha um valor para {atributo}: ")
                 if escolha.isdigit() and int(escolha) in pool:
                     valor = int(escolha)
@@ -39,25 +43,28 @@ class _DistribuidorInterativo:
                     pool.remove(valor)
                     break
                 else:
-                    self.saida("Valor indisponivel. Tente novamente.")  
+                    self.saida("Valor indisponível. Tente novamente.")
         return ConjuntoAtributos(**atribuicoes)
+
 
 class EstrategiaAventureiro(estrategia):
 
     def __init__(self, entrada=input, saida=print):
-        self.distribuidor = _DistribuidorInterativo(entrada, saida)
+        self._distribuidor = _DistribuidorInterativo(entrada, saida)
 
     def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
-        pool = [Dado.rolar_4d6_drop_lowest() for _ in range(6)]
-        return self._distribuidor.atribuir(pool)   
+        pool = [
+            Dado.rolar_soma(regras.lados_aventureiro, regras.vezes_aventureiro)
+            for _ in range(6)
+        ]
+        return self._distribuidor.atribuir(pool)
+
 
 class EstrategiaHeroica(estrategia):
-    """
-    Heróico: rola 4d6, descarta o menor, seis vezes; o jogador distribui livremente.
-    """
+
     def __init__(self, entrada=input, saida=print):
         self._distribuidor = _DistribuidorInterativo(entrada, saida)
 
     def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
         pool = [Dado.rolar_4d6_descartar_menor() for _ in range(6)]
-        return self._distribuidor.atribuir(pool) 
+        return self._distribuidor.atribuir(pool)

@@ -1,0 +1,13 @@
+{
+  "nome": "talysson",
+  "classe": "mago",
+  "atributos": {
+    "FOR": 12,
+    "DES": 7,
+    "CON": 13,
+    "INT": 9,
+    "SAB": 11,
+    "CAR": 7
+  },
+  "metodo": "Clássico"
+}

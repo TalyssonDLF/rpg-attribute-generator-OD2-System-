@@ -1,0 +1,13 @@
+{
+  "nome": "khala breso",
+  "classe": "barbaro",
+  "atributos": {
+    "FOR": 14,
+    "DES": 10,
+    "CON": 12,
+    "INT": 5,
+    "SAB": 8,
+    "CAR": 9
+  },
+  "metodo": "Aventureiro"
+}

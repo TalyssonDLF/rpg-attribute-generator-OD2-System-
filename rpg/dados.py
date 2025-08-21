@@ -16,4 +16,6 @@ class Dado:
         rolagens.remove(min(rolagens))
         return sum(rolagens)
                    
-                   
+    @staticmethod
+    def rolar_4d6_descartar_menor() -> int:
+        return Dado.rolar_4d6_drop_lowest()                 
