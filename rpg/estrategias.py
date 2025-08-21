@@ -3,16 +3,16 @@ from abc import ABC, abstractmethod
 from typing import List
 from rpg.dados import Dado
 from rpg.modelos import ConjuntoAtributos, ATRIBUTOS
-from rpg.regras import Regras
+from rpg.regras import LivroRegras
 
 class estrategia(ABC):
     @abstractmethod
-    def distribuir(self, regras: Regras) -> ConjuntoAtributos:
+    def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
         ...
 
 class EstrategiaClassica(estrategia):
 
-    def distribuir(self, regras: Regras) -> ConjuntoAtributos:
+    def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
         valores = []
         for _ in range(6):
             valores.append(Dado.rolar_soma(regras.lados_classico, regras.vezes_classico))
@@ -42,11 +42,22 @@ class _DistribuidorInterativo:
                     self.saida("Valor indisponivel. Tente novamente.")  
         return ConjuntoAtributos(**atribuicoes)
 
-class EstrategiaAveintureiro(estrategia):
+class EstrategiaAventureiro(estrategia):
 
     def __init__(self, entrada=input, saida=print):
         self.distribuidor = _DistribuidorInterativo(entrada, saida)
 
-    def distribuir(self, regras: Regras) -> ConjuntoAtributos:
+    def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
         pool = [Dado.rolar_4d6_drop_lowest() for _ in range(6)]
-        return self._distribuidor.atribuir(pool)    
+        return self._distribuidor.atribuir(pool)   
+
+class EstrategiaHeroica(estrategia):
+    """
+    Heróico: rola 4d6, descarta o menor, seis vezes; o jogador distribui livremente.
+    """
+    def __init__(self, entrada=input, saida=print):
+        self._distribuidor = _DistribuidorInterativo(entrada, saida)
+
+    def distribuir(self, regras: LivroRegras) -> ConjuntoAtributos:
+        pool = [Dado.rolar_4d6_descartar_menor() for _ in range(6)]
+        return self._distribuidor.atribuir(pool) 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 ATRIBUTOS: Tuple[str, ...] = ("FOR", "DES", "CON", "INT", "SAB", "CAR")
 
