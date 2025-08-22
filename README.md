@@ -18,22 +18,6 @@ O sistema implementa a geração de atributos de personagens de RPG conforme o *
 
 ---
 
-## 🛠 Estrutura do Projeto
-rpg-attribute-generator-od2/
-│
-├── rpg/
-│   ├── init.py
-│   ├── principal.py        # Arquivo principal (entrypoint do sistema)
-│   ├── dados.py            # Classe Dado (rolagens de dados)
-│   ├── modelos.py          # Modelos: ConjuntoAtributos, Personagem
-│   ├── estrategias.py      # Estratégias de distribuição (Clássico, Aventureiro, Heróico)
-│   └── regras.py           # Parâmetros do livro de regras
-│
-└── README.md               # Este arquivo
-
-
----
-
 ## Como Executar
 
 ### Pré-requisitos
