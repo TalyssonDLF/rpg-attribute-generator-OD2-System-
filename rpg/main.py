@@ -1,5 +1,3 @@
-# rpg/principal.py
-# Terminal temático de RPG (std. library only)
 from __future__ import annotations
 import os
 import sys
@@ -15,11 +13,6 @@ from .estrategias import (
     EstrategiaHeroica,
 )
 
-# =========================
-# Utilidades de estilo
-# =========================
-
-# Cores ANSI (clássicas, compatíveis)
 class C:
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -27,7 +20,6 @@ class C:
     IT = "\033[3m"
     UL = "\033[4m"
 
-    # cores de texto
     FG = {
         "gray": "\033[90m",
         "red": "\033[91m",
@@ -39,7 +31,6 @@ class C:
         "white": "\033[97m",
     }
 
-    # cores de fundo
     BG = {
         "black": "\033[40m",
         "red": "\033[41m",
@@ -130,15 +121,13 @@ def animacao_dados(segundos: float = 1.2):
             time.sleep(0.08)
     print("\r" + " " * 40 + "\r", end="")
 
-
-# Entrada/Saída estilizadas para passar às estratégias “interativas”
 def entrada_estilosa(prompt: str) -> str:
     seta = cor("➤", C.FG["cyan"], C.BOLD)
     return input(f"{seta} {cor(prompt, C.FG['white'], C.BOLD)} ")
 
 
 def saida_estilosa(msg: str):
-    # garante quebra de linha e cor consistente
+    
     print(cor(msg, C.FG["white"]))
 
 
@@ -150,7 +139,6 @@ def escolher_estilo() -> str:
         ("3", "Estilo Heróico", "4d6 descartando o menor • você distribui os valores"),
     ]
 
-    # desenha “cards” simples
     for k, titulo, desc in caixa:
         print(cor(f"\n [{k}] {titulo}", C.FG["cyan"], C.BOLD))
         print(cor(f"     {desc}", C.FG["gray"]))
@@ -168,7 +156,6 @@ def imprimir_atributos(nome_estilo: str, atributos: dict[str, int]):
     print(cor(centralizar(titulo), C.FG["green"], C.BOLD))
     linha()
 
-    # tabela simples monoespaçada
     ordem = ["FOR", "DES", "CON", "INT", "SAB", "CAR"]
     max_key = max(len(k) for k in ordem)
     for k in ordem:
@@ -222,7 +209,6 @@ def main():
     imprimir_lento(cor("Que os dados sorriam para você nas próximas jornadas!", C.FG["magenta"], C.IT), atraso=0.01)
     print()
 
-    # opcional: salvar ficha rápida
     resp = entrada_estilosa("Deseja salvar a ficha em JSON? [s/N]").lower().strip()
     if resp == "s":
         import json
