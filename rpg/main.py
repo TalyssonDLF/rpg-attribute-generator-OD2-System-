@@ -3,15 +3,16 @@ import os
 import sys
 import time
 import shutil
-import random
 
-from .modelos import Personagem
+from .modelos import Personagem, ConjuntoAtributos
 from .regras import LivroRegras
 from .estrategias import (
     EstrategiaClassica,
     EstrategiaAventureiro,
     EstrategiaHeroica,
 )
+from .racas import criar_raca
+from .classes_personagem import criar_classe
 
 class C:
     RESET = "\033[0m"
@@ -89,15 +90,14 @@ def moldura(titulo: str | None = None, cor_borda: str = "blue"):
 
 
 def banner():
-    col = largura_terminal()
     titulo = r"""
-    ╔══════════════════════════════════════════════════════════════╗
-    ║                                                              ║
-      ║                   O L D   D R A G O N   2                    ║  
-    ║                                                              ║
-    ║              Crie o seu heroi e comece a jogar               ║
-     ║                                                              ║ 
-       ╚══════════════════════════════════════════════════════════════╝   
+          ╔══════════════════════════════════════════════════════════════╗      
+          ║                                                              ║      
+          ║                   O L D   D R A G O N   2                    ║      
+          ║                                                              ║      
+          ║              Crie o seu heroi e comece a jogar               ║      
+          ║                                                              ║      
+          ╚══════════════════════════════════════════════════════════════╝      
     """.strip("\n")
 
     for line in titulo.splitlines():
@@ -121,15 +121,19 @@ def animacao_dados(segundos: float = 1.2):
             time.sleep(0.08)
     print("\r" + " " * 40 + "\r", end="")
 
+
 def entrada_estilosa(prompt: str) -> str:
     seta = cor("➤", C.FG["cyan"], C.BOLD)
     return input(f"{seta} {cor(prompt, C.FG['white'], C.BOLD)} ")
 
 
 def saida_estilosa(msg: str):
-    
     print(cor(msg, C.FG["white"]))
 
+
+# =========================
+# Fluxo interativo
+# =========================
 
 def escolher_estilo() -> str:
     print(cor("\n Escolha o método de geração (p.14):", C.FG["yellow"], C.BOLD))
@@ -164,18 +168,80 @@ def imprimir_atributos(nome_estilo: str, atributos: dict[str, int]):
     linha()
 
 
-def escolher_classe() -> str:
-    print(cor("\n Após desvendar os dados do destino… escolha sua classe.", C.FG["yellow"]))
-    return entrada_estilosa("Classe do personagem:" ).strip() or "Classe-Genérica"
+def escolher_raca(regras: LivroRegras, atributos: ConjuntoAtributos):
+    # Lista raças do rulebook
+    racas_disponiveis = list(regras.racas.keys())
+    print(cor("\n Escolha a Raça:", C.FG["yellow"], C.BOLD))
+    for i, r in enumerate(racas_disponiveis, 1):
+        print(cor(f" [{i}] {r.title()}", C.FG["cyan"]))
+    while True:
+        op = entrada_estilosa(f"Raça [1-{len(racas_disponiveis)}]:").strip() or "1"
+        if op.isdigit() and 1 <= int(op) <= len(racas_disponiveis):
+            break
+        print(cor(" Opção inválida.", C.FG["red"], C.BOLD))
+    nome_raca = racas_disponiveis[int(op) - 1]
+    raca = criar_raca(nome_raca, regras.racas[nome_raca])
+
+    # Aplica ajustes raciais fixos (ex.: Elfo +2 DES -2 CON; Anão +2 CON -2 CAR)
+    atributos_ajustados = raca.aplicar_ajustes(atributos)
+
+    # Mostra resumo da raça
+    linha()
+    print(cor(centralizar(f"Raça escolhida: {nome_raca.title()}"), C.FG["green"], C.BOLD))
+    print(cor(centralizar(f"Movimento: {raca.movimento} m  •  Infravisão: {raca.infravisao} m"), C.FG["gray"]))
+    if raca.habilidades:
+        print(cor("\n Habilidades raciais:", C.FG["magenta"], C.BOLD))
+        for h in raca.habilidades:
+            print("  - " + h)
+
+    # Alinhamento permitido
+    print(cor("\n Alinhamentos permitidos:", C.FG["yellow"]))
+    for i, a in enumerate(raca.alinhamentos, 1):
+        print(f" [{i}] {a}")
+    while True:
+        op = entrada_estilosa(f"Alinhamento [1-{len(raca.alinhamentos)}]:").strip() or "1"
+        if op.isdigit() and 1 <= int(op) <= len(raca.alinhamentos):
+            break
+        print(cor(" Opção inválida.", C.FG["red"], C.BOLD))
+    alinhamento = raca.alinhamentos[int(op) - 1]
+
+    return raca, atributos_ajustados, alinhamento
+
+
+def escolher_classe(regras: LivroRegras, personagem: Personagem):
+    classes_disp = list(regras.classes.keys())
+    print(cor("\n Escolha a Classe:", C.FG["yellow"], C.BOLD))
+    for i, c in enumerate(classes_disp, 1):
+        print(cor(f" [{i}] {c.title()}", C.FG["cyan"]))
+    while True:
+        op = entrada_estilosa(f"Classe [1-{len(classes_disp)}]:").strip() or "1"
+        if op.isdigit() and 1 <= int(op) <= len(classes_disp):
+            nome_classe = classes_disp[int(op) - 1]
+            break
+        print(cor(" Opção inválida.", C.FG["red"], C.BOLD))
+
+    classe = criar_classe(nome_classe, regras.classes[nome_classe])
+
+    # Valida requisitos; se não atender, avisa e volta a escolher
+    if not classe.validar_requisitos(personagem):
+        print(cor("\n ⚠ Requisitos da classe não atendidos.", C.FG["red"], C.BOLD))
+        print(" Requisitos:", classe.requisitos)
+        print(" Atributos :", personagem.atributos.como_dict())
+        pausa("Pressione ENTER para escolher outra classe...")
+        return escolher_classe(regras, personagem)
+
+    # Aplica benefícios (vida inicial + habilidades)
+    classe.aplicar_beneficios(personagem)
+    return nome_classe
 
 
 def main():
-
     limpar_tela()
     banner()
 
     regras = LivroRegras()
     nome = entrada_estilosa("Nome do personagem:").strip() or "SemNome"
+
     estilo = escolher_estilo()
     animacao_dados()
 
@@ -189,26 +255,51 @@ def main():
         estrategia = EstrategiaHeroica(entrada=entrada_estilosa, saida=saida_estilosa)
         nome_estilo = "Heróico"
 
+    # 1) Atributos
     atributos = estrategia.distribuir(regras)
     imprimir_atributos(nome_estilo, atributos.como_dict())
 
-    classe = escolher_classe()
-    personagem = Personagem(nome=nome, atributos=atributos, classe_escolhida=classe)
+    # 2) Raça + Alinhamento (aplica ajustes)
+    raca, atributos_ajustados, alinhamento = escolher_raca(regras, atributos)
 
+    # 3) Classe (validação de requisitos + benefícios)
+    personagem = Personagem(
+        nome=nome,
+        atributos=atributos_ajustados,
+        raca_escolhida=raca.nome.title(),
+        alinhamento=alinhamento,
+        movimento=raca.movimento,
+        infravisao=raca.infravisao,
+        habilidades=(raca.habilidades or []).copy(),
+    )
+    classe_nome = escolher_classe(regras, personagem)
+    personagem.classe_escolhida = classe_nome.title()
+
+    # 4) Apresentação final
     limpar_tela()
     banner()
     print(cor(centralizar("PERSONAGEM FORJADO!"), C.FG["green"], C.BOLD))
     linha()
     imprimir_lento(cor(f" Nome  : {personagem.nome}", C.FG["white"], C.BOLD), atraso=0.01)
+    imprimir_lento(cor(f" Raça  : {personagem.raca_escolhida}", C.FG["white"], C.BOLD), atraso=0.01)
+    imprimir_lento(cor(f" Alinh.: {personagem.alinhamento}", C.FG["white"], C.BOLD), atraso=0.01)
     imprimir_lento(cor(f" Classe: {personagem.classe_escolhida}", C.FG["white"], C.BOLD), atraso=0.01)
+    imprimir_lento(cor(f" Vida  : {personagem.vida}", C.FG["white"], C.BOLD), atraso=0.01)
     print()
     for k, v in personagem.atributos.como_dict().items():
         imprimir_lento(cor(f"  {k}: {v}", C.FG["cyan"], C.BOLD), atraso=0.01)
+
+    if personagem.habilidades:
+        linha()
+        print(cor(centralizar("Habilidades"), C.FG["magenta"], C.BOLD))
+        for h in personagem.habilidades:
+            imprimir_lento(cor(f" • {h}", C.FG["magenta"]), atraso=0.01)
 
     linha()
     imprimir_lento(cor("Que os dados sorriam para você nas próximas jornadas!", C.FG["magenta"], C.IT), atraso=0.01)
     print()
 
+    # 5) Salvar ficha em JSON
     resp = entrada_estilosa("Deseja salvar a ficha em JSON? [s/N]").lower().strip()
     if resp == "s":
         import json
@@ -217,15 +308,19 @@ def main():
             json.dump(
                 {
                     "nome": personagem.nome,
+                    "raca": personagem.raca_escolhida,
+                    "alinhamento": personagem.alinhamento,
                     "classe": personagem.classe_escolhida,
+                    "vida": personagem.vida,
+                    "habilidades": personagem.habilidades,
                     "atributos": personagem.atributos.como_dict(),
-                    "metodo": nome_estilo,
+                    "metodo_atributos": nome_estilo,
                 },
                 arq,
                 ensure_ascii=False,
                 indent=2,
             )
-        print(cor(f"\nFicha salva em {nome_arquivo}", C.FG["green"], C.BOLD))
+        print(cor(f"\n Ficha salva em {nome_arquivo}", C.FG["green"], C.BOLD))
     print()
     pausa("Pressione ENTER para encerrar...")
 
