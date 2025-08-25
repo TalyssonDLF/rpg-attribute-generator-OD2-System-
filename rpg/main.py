@@ -91,13 +91,13 @@ def moldura(titulo: str | None = None, cor_borda: str = "blue"):
 
 def banner():
     titulo = r"""
-          ╔══════════════════════════════════════════════════════════════╗      
-          ║                                                              ║      
-          ║                   O L D   D R A G O N   2                    ║      
-          ║                                                              ║      
-          ║              Crie o seu heroi e comece a jogar               ║      
-          ║                                                              ║      
-          ╚══════════════════════════════════════════════════════════════╝      
+          ╔═══════════════════════════════════════════════════════════════════╗ 
+          ║                                                           /__\    ║
+          ║                   O L D   D R A G O N   2                 (oo)    ║
+          ║                                                          /(==)\_  ║
+          ║              Crie o seu heroi e comece a jogar            /||\  | ║
+          ║                                                          _/  \_ | ║
+            ╚═══════════════════════════════════════════════════════════════════╝   
     """.strip("\n")
 
     for line in titulo.splitlines():
